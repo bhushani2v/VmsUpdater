@@ -81,7 +81,22 @@ if (selectedComponents.Length == 0)
 using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
 
 IFileSource fileSource;
-if (GoogleDriveFileSource.IsGoogleDriveUrl(url))
+if (LocalFileSource.IsLocalPath(url))
+{
+    if (!Directory.Exists(url))
+    {
+        reporter.PushResult(new UpdateResult
+        {
+            Status = "error",
+            Message = $"Local update path not found: '{url}'.",
+            ExitCode = 1
+        });
+        return 1;
+    }
+    reporter.Push(new StatusUpdate { Phase = "init", Message = "Using local folder file source." });
+    fileSource = new LocalFileSource(url);
+}
+else if (GoogleDriveFileSource.IsGoogleDriveUrl(url))
 {
     reporter.Push(new StatusUpdate { Phase = "init", Message = "Detected Google Drive folder URL." });
     fileSource = new GoogleDriveFileSource(httpClient, url);
